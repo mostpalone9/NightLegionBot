@@ -295,6 +295,7 @@ class BotwJoinView(discord.ui.View):
                 )
             except WiseOldManRateLimitError:
                 self.cog.register_participant_without_sync(event, interaction, saved_rsn)
+                await self.cog.update_public_botw_message(event)
 
                 await interaction.followup.send(
                     (
@@ -372,6 +373,7 @@ class BotwRsnModal(discord.ui.Modal, title="Enter BOTW"):
             )
         except WiseOldManRateLimitError:
             self.cog.register_participant_without_sync(event, interaction, entered_rsn)
+            await self.cog.update_public_botw_message(event)
 
             await interaction.followup.send(
                 (
@@ -432,6 +434,30 @@ class Botw(commands.Cog):
                 data["events"][index] = updated_event
                 save_json(BOTW_FILE, data)
                 return
+
+    async def update_public_botw_message(self, event: dict) -> None:
+        channel_id = event.get("channel_id")
+        message_id = event.get("message_id")
+
+        if not channel_id or not message_id:
+            return
+
+        channel = self.bot.get_channel(channel_id)
+
+        if channel is None:
+            try:
+                channel = await self.bot.fetch_channel(channel_id)
+            except discord.HTTPException:
+                return
+
+        try:
+            message = await channel.fetch_message(message_id)
+            await message.edit(
+                embed=self.build_botw_embed(event),
+                view=BotwJoinView(self) if event.get("active") else None,
+            )
+        except discord.HTTPException:
+            return
 
     def build_botw_embed(self, event: dict) -> discord.Embed:
         boss = event["boss"]
@@ -559,6 +585,7 @@ class Botw(commands.Cog):
         participant["registered_at"] = participant.get("registered_at", int(time.time()))
 
         self.save_active_event(event)
+        await self.update_public_botw_message(event)
 
         return starting_kc, current_kc, gained_kc
 
@@ -586,6 +613,7 @@ class Botw(commands.Cog):
 
         event["last_updated"] = int(time.time())
         self.save_active_event(event)
+        await self.update_public_botw_message(event)
 
         return event, errors
 
@@ -671,6 +699,8 @@ class Botw(commands.Cog):
             "participants": {},
             "created_by": interaction.user.id,
             "last_updated": None,
+            "channel_id": None,
+            "message_id": None,
         }
 
         data["events"].append(event)
@@ -686,6 +716,13 @@ class Botw(commands.Cog):
             view=BotwJoinView(self),
             allowed_mentions=discord.AllowedMentions(roles=True),
         )
+
+        message = await interaction.original_response()
+
+        event["channel_id"] = interaction.channel_id
+        event["message_id"] = message.id
+
+        self.save_active_event(event)
 
     @app_commands.command(
         name="botw_set_rsn",
@@ -777,6 +814,7 @@ class Botw(commands.Cog):
             )
         except WiseOldManRateLimitError:
             self.register_participant_without_sync(event, interaction, final_rsn)
+            await self.update_public_botw_message(event)
 
             await interaction.followup.send(
                 (
@@ -808,8 +846,15 @@ class Botw(commands.Cog):
         name="botw_update",
         description="Force-update the active BOTW leaderboard from Wise Old Man.",
     )
-    async def botw_update(self, interaction: discord.Interaction):
-        await interaction.response.defer()
+    @app_commands.describe(
+        public="Post the update result publicly. Defaults to private.",
+    )
+    async def botw_update(
+        self,
+        interaction: discord.Interaction,
+        public: bool = False,
+    ):
+        await interaction.response.defer(ephemeral=not public)
 
         event, errors = await self.sync_active_event()
 
@@ -882,7 +927,7 @@ class Botw(commands.Cog):
             color=discord.Color.blurple(),
         )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(
         name="botw_add_kc",
@@ -926,17 +971,26 @@ class Botw(commands.Cog):
         save_json(BOTW_FILE, data)
 
         embed = self.build_botw_embed(active_event)
+        await self.update_public_botw_message(active_event)
 
         await interaction.response.send_message(
             f"Manually updated **{player_name}** to **+{gained_kc} KC**.",
             embed=embed,
+            ephemeral=True,
         )
 
     @app_commands.command(
         name="botw_leaderboard",
         description="Show the active BOTW leaderboard.",
     )
-    async def botw_leaderboard(self, interaction: discord.Interaction):
+    @app_commands.describe(
+        public="Post the leaderboard publicly. Defaults to private.",
+    )
+    async def botw_leaderboard(
+        self,
+        interaction: discord.Interaction,
+        public: bool = False,
+    ):
         active_event = self.get_active_event()
 
         if active_event is None:
@@ -948,7 +1002,10 @@ class Botw(commands.Cog):
 
         embed = self.build_botw_embed(active_event)
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(
+            embed=embed,
+            ephemeral=not public,
+        )
 
     @app_commands.command(
         name="botw_end",
@@ -985,6 +1042,7 @@ class Botw(commands.Cog):
 
         active_event["active"] = False
         save_json(BOTW_FILE, data)
+        await self.update_public_botw_message(active_event)
 
         leaderboard = active_event.get("leaderboard", {})
 

@@ -12,6 +12,8 @@ from storage import load_json, save_json
 
 
 WISE_OLD_MAN_BASE_URL = "https://api.wiseoldman.net/v2"
+OSRS_WIKI_API_URL = "https://oldschool.runescape.wiki/api.php"
+OSRS_WIKI_USER_AGENT = "NightLegionBot/1.0 Discord bot for OSRS clan events"
 
 
 class WiseOldManRateLimitError(Exception):
@@ -194,6 +196,40 @@ def extract_boss_kills(player_details: dict, boss_metric: str) -> int:
         return 0
 
     return int(kills)
+
+
+async def get_boss_image_url(boss_name: str) -> str | None:
+    params = {
+        "action": "query",
+        "format": "json",
+        "prop": "pageimages",
+        "piprop": "thumbnail",
+        "pithumbsize": "300",
+        "redirects": "1",
+        "titles": boss_name,
+    }
+
+    headers = {
+        "User-Agent": OSRS_WIKI_USER_AGENT,
+    }
+
+    async with aiohttp.ClientSession(headers=headers) as session:
+        async with session.get(OSRS_WIKI_API_URL, params=params) as response:
+            if response.status >= 400:
+                return None
+
+            data = await response.json()
+
+    pages = data.get("query", {}).get("pages", {})
+
+    for page in pages.values():
+        thumbnail = page.get("thumbnail", {})
+        source = thumbnail.get("source")
+
+        if source:
+            return source
+
+    return None
 
 
 class BotwNotifyView(discord.ui.View):
@@ -490,7 +526,15 @@ class Botw(commands.Cog):
                 elif participant.get("sync_pending"):
                     kc_text = " `sync pending`"
 
-                medal = "🥇" if index == 1 else "🥈" if index == 2 else "🥉" if index == 3 else f"**{index}.**"
+                medal = (
+                    "🥇"
+                    if index == 1
+                    else "🥈"
+                    if index == 2
+                    else "🥉"
+                    if index == 3
+                    else f"**{index}.**"
+                )
 
                 lines.append(f"{medal} **{rsn}**{mention} — **+{gain} KC**{kc_text}")
         else:
@@ -506,6 +550,10 @@ class Botw(commands.Cog):
             ),
             color=discord.Color.gold() if event.get("active") else discord.Color.dark_grey(),
         )
+
+        boss_image_url = event.get("boss_image_url")
+        if boss_image_url:
+            embed.set_thumbnail(url=boss_image_url)
 
         embed.add_field(name="Status", value=status, inline=True)
         embed.add_field(name="Reward", value=reward, inline=True)
@@ -686,11 +734,13 @@ class Botw(commands.Cog):
         start_time = int(time.time())
         end_time = start_time + duration_days * 24 * 60 * 60
         final_boss_metric = boss_metric.strip() if boss_metric.strip() else boss_name_to_metric(boss)
+        boss_image_url = await get_boss_image_url(boss)
 
         event = {
             "id": str(start_time),
             "boss": boss,
             "boss_metric": final_boss_metric,
+            "boss_image_url": boss_image_url,
             "reward": reward,
             "start_time": start_time,
             "end_time": end_time,
@@ -887,6 +937,40 @@ class Botw(commands.Cog):
             "Bound the active BOTW to that message. Future joins/updates should edit that post automatically.",
             ephemeral=True,
         )
+
+    @app_commands.command(
+        name="botw_refresh_image",
+        description="Refresh the boss image for the active BOTW from the OSRS Wiki.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_refresh_image(self, interaction: discord.Interaction):
+        event = self.get_active_event()
+
+        if event is None:
+            await interaction.response.send_message(
+                "There is no active BOTW event.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        boss_image_url = await get_boss_image_url(event["boss"])
+        event["boss_image_url"] = boss_image_url
+
+        self.save_active_event(event)
+        await self.update_public_botw_message(event)
+
+        if boss_image_url:
+            await interaction.followup.send(
+                f"Updated the BOTW boss image for **{event['boss']}**.",
+                ephemeral=True,
+            )
+        else:
+            await interaction.followup.send(
+                f"I could not find a wiki thumbnail for **{event['boss']}**.",
+                ephemeral=True,
+            )
 
     @app_commands.command(
         name="botw_update",

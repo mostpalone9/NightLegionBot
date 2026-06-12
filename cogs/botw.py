@@ -841,6 +841,7 @@ class Botw(commands.Cog):
             ),
             ephemeral=True,
         )
+
     @app_commands.command(
         name="botw_bind_message",
         description="Bind the active BOTW to an existing Discord message so it can auto-update.",
@@ -886,7 +887,7 @@ class Botw(commands.Cog):
             "Bound the active BOTW to that message. Future joins/updates should edit that post automatically.",
             ephemeral=True,
         )
-        
+
     @app_commands.command(
         name="botw_update",
         description="Force-update the active BOTW leaderboard from Wise Old Man.",

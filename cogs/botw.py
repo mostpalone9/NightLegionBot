@@ -841,7 +841,52 @@ class Botw(commands.Cog):
             ),
             ephemeral=True,
         )
+    @app_commands.command(
+        name="botw_bind_message",
+        description="Bind the active BOTW to an existing Discord message so it can auto-update.",
+    )
+    @app_commands.describe(
+        message_id="The message ID of the BOTW post to auto-update.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_bind_message(
+        self,
+        interaction: discord.Interaction,
+        message_id: str,
+    ):
+        event = self.get_active_event()
 
+        if event is None:
+            await interaction.response.send_message(
+                "There is no active BOTW event to bind.",
+                ephemeral=True,
+            )
+            return
+
+        try:
+            parsed_message_id = int(message_id)
+        except ValueError:
+            await interaction.response.send_message(
+                "That message ID is not valid. Right-click the BOTW post and copy its message ID.",
+                ephemeral=True,
+            )
+            return
+
+        event["channel_id"] = interaction.channel_id
+        event["message_id"] = parsed_message_id
+
+        self.save_active_event(event)
+
+        try:
+            await self.update_public_botw_message(event)
+        except Exception:
+            pass
+
+        await interaction.response.send_message(
+            "Bound the active BOTW to that message. Future joins/updates should edit that post automatically.",
+            ephemeral=True,
+        )
+        
     @app_commands.command(
         name="botw_update",
         description="Force-update the active BOTW leaderboard from Wise Old Man.",

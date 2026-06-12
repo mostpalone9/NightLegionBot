@@ -1,0 +1,40 @@
+{
+  "events": [
+    {
+      "id": "1781115065",
+      "name": "Test Bingo",
+      "start_time": 1781115065,
+      "end_time": 1781719865,
+      "active": false,
+      "team_scores": {},
+      "tasks": [
+        "get a pet"
+      ],
+      "created_by": 857121029024514048
+    },
+    {
+      "id": "1781116074",
+      "name": "Last test",
+      "start_time": 1781116074,
+      "end_time": 1781720874,
+      "active": false,
+      "player_scores": {},
+      "tasks": [],
+      "created_by": 857121029024514048
+    },
+    {
+      "id": "1781116088",
+      "name": "Last test",
+      "start_time": 1781116088,
+      "end_time": 1781720888,
+      "active": false,
+      "player_scores": {
+        "857121029024514048": 40
+      },
+      "tasks": [
+        "Pet"
+      ],
+      "created_by": 857121029024514048
+    }
+  ]
+}

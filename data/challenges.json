@@ -1,0 +1,25 @@
+{
+  "challenges": [
+    {
+      "id": "1781115264",
+      "type": "Daily",
+      "text": "Kill Zulrah 10 times.",
+      "created_at": 1781115264,
+      "created_by": 857121029024514048
+    },
+    {
+      "id": "1781115275",
+      "type": "Weekly",
+      "text": "Get one unique drop screenshot.",
+      "created_at": 1781115275,
+      "created_by": 857121029024514048
+    },
+    {
+      "id": "1781115310",
+      "type": "Daily",
+      "text": "Shit your pants while sitting in your gaming chair.",
+      "created_at": 1781115310,
+      "created_by": 857121029024514048
+    }
+  ]
+}

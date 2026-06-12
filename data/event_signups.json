@@ -1,0 +1,17 @@
+{
+  "events": [
+    {
+      "id": "1781116702571",
+      "type": "Bingo",
+      "name": "Test",
+      "description": "Click Join Event if you want to participate.",
+      "role_id": 1514337951037919445,
+      "guild_id": 1404482606241943582,
+      "channel_id": 1514322478611304579,
+      "message_id": 1514337949624307732,
+      "created_at": 1781116702,
+      "created_by": 857121029024514048,
+      "active": false
+    }
+  ]
+}

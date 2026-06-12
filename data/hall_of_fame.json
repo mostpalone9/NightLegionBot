@@ -1,0 +1,38 @@
+{
+  "winners": [
+    {
+      "event_type": "Skill of the Week",
+      "event_name": "Mining",
+      "winner_name": "ShesXPWaste",
+      "score": 500000,
+      "note": "XP gained",
+      "ended_at": 1781114992
+    },
+    {
+      "event_type": "Bingo",
+      "event_name": "Test",
+      "winner_name": "ShesXPWaste",
+      "score": 1,
+      "note": "",
+      "ended_at": 1781116019,
+      "added_by": 857121029024514048
+    },
+    {
+      "event_type": "Bingo",
+      "event_name": "Test",
+      "winner_name": "ShesXPWaste",
+      "score": 500000000,
+      "note": "",
+      "ended_at": 1781116041,
+      "added_by": 857121029024514048
+    },
+    {
+      "event_type": "Bingo Event",
+      "event_name": "Last test",
+      "winner_name": "<@857121029024514048>",
+      "score": 40,
+      "note": "Individual bingo winner",
+      "ended_at": 1781116179
+    }
+  ]
+}

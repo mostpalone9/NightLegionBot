@@ -1,0 +1,168 @@
+{
+  "events": [
+    {
+      "id": "1781114840",
+      "boss": "Duke Sucellus",
+      "reward": "10m",
+      "start_time": 1781114840,
+      "end_time": 1781719640,
+      "active": false,
+      "leaderboard": {
+        "ShesXPWaste": 25
+      },
+      "created_by": 857121029024514048
+    },
+    {
+      "id": "1781292400",
+      "boss": "The Corrupted Gauntlet",
+      "boss_metric": "the_corrupted_gauntlet",
+      "reward": "Test",
+      "start_time": 1781292400,
+      "end_time": 1781897200,
+      "active": false,
+      "leaderboard": {
+        "ShesXPWaste": 0
+      },
+      "participants": {
+        "ShesXPWaste": {
+          "starting_kc": 226,
+          "current_kc": 226,
+          "last_synced": 1781292800,
+          "discord_user_id": 857121029024514048,
+          "discord_display_name": "ShesXPWaste"
+        }
+      },
+      "created_by": 857121029024514048,
+      "last_updated": 1781292802
+    },
+    {
+      "id": "1781292825",
+      "boss": "zulrah",
+      "boss_metric": "zulrah",
+      "reward": "Bragging rights",
+      "start_time": 1781292825,
+      "end_time": 1781897625,
+      "active": false,
+      "leaderboard": {
+        "ShesXPWaste": 0
+      },
+      "participants": {
+        "ShesXPWaste": {
+          "starting_kc": 1,
+          "current_kc": 1,
+          "last_synced": 1781292869,
+          "discord_user_id": 857121029024514048,
+          "discord_display_name": "ShesXPWaste"
+        }
+      },
+      "created_by": 857121029024514048,
+      "last_updated": null
+    },
+    {
+      "id": "1781292896",
+      "boss": "Brutus",
+      "boss_metric": "brutus",
+      "reward": "Bragging rights",
+      "start_time": 1781292896,
+      "end_time": 1781897696,
+      "active": false,
+      "leaderboard": {},
+      "participants": {},
+      "created_by": 857121029024514048,
+      "last_updated": null
+    },
+    {
+      "id": "1781292896",
+      "boss": "Brutus",
+      "boss_metric": "brutus",
+      "reward": "Bragging rights",
+      "start_time": 1781292896,
+      "end_time": 1781897696,
+      "active": false,
+      "leaderboard": {},
+      "participants": {},
+      "created_by": 857121029024514048,
+      "last_updated": null
+    },
+    {
+      "id": "1781293624",
+      "boss": "The Corrupted Gauntlet",
+      "boss_metric": "the_corrupted_gauntlet",
+      "reward": "Test",
+      "start_time": 1781293624,
+      "end_time": 1781898424,
+      "active": false,
+      "leaderboard": {
+        "ShesXPWaste": 0
+      },
+      "participants": {
+        "ShesXPWaste": {
+          "starting_kc": 226,
+          "current_kc": 226,
+          "last_synced": 1781293726,
+          "sync_pending": false,
+          "discord_user_id": 857121029024514048,
+          "discord_display_name": "ShesXPWaste",
+          "registered_at": 1781293638
+        }
+      },
+      "created_by": 857121029024514048,
+      "last_updated": 1781293728
+    },
+    {
+      "id": "1781297137",
+      "boss": "Zulrah",
+      "boss_metric": "zulrah",
+      "reward": "Toxic Blowpipe",
+      "start_time": 1781297137,
+      "end_time": 1781901937,
+      "active": true,
+      "leaderboard": {
+        "ShesXPWaste": 0,
+        "Dom expert": 0,
+        "archivor": 0,
+        "movedrugs": 0
+      },
+      "participants": {
+        "ShesXPWaste": {
+          "starting_kc": 1,
+          "current_kc": 1,
+          "last_synced": 1781297142,
+          "sync_pending": false,
+          "discord_user_id": 857121029024514048,
+          "discord_display_name": "ShesXPWaste",
+          "registered_at": 1781297142
+        },
+        "Dom expert": {
+          "starting_kc": 1523,
+          "current_kc": 1523,
+          "last_synced": 1781297175,
+          "sync_pending": false,
+          "discord_user_id": 465129974525853696,
+          "discord_display_name": "Dom",
+          "registered_at": 1781297175
+        },
+        "archivor": {
+          "starting_kc": 120,
+          "current_kc": 120,
+          "last_synced": 1781297190,
+          "sync_pending": false,
+          "discord_user_id": 1404136393801863168,
+          "discord_display_name": "Archivor",
+          "registered_at": 1781297190
+        },
+        "movedrugs": {
+          "starting_kc": 286,
+          "current_kc": 286,
+          "last_synced": 1781298048,
+          "sync_pending": false,
+          "discord_user_id": 1412142731400056964,
+          "discord_display_name": "6AYGEX",
+          "registered_at": 1781297721
+        }
+      },
+      "created_by": 857121029024514048,
+      "last_updated": 1781297152
+    }
+  ]
+}

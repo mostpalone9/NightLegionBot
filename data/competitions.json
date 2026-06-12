@@ -1,0 +1,22 @@
+{
+  "events": [
+    {
+      "id": "1781114928",
+      "type": "Skill of the Week",
+      "name": "Mining",
+      "reward": "10m",
+      "start_time": 1781114928,
+      "end_time": 1781719728,
+      "active": false,
+      "entries": {
+        "ShesXPWaste": {
+          "score": 500000,
+          "note": "XP gained",
+          "updated_by": 857121029024514048,
+          "updated_at": 1781114960
+        }
+      },
+      "created_by": 857121029024514048
+    }
+  ]
+}

@@ -24,20 +24,30 @@ class NightLegionBot(commands.Bot):
         await self.load_extension("cogs.hall_of_fame")
         await self.load_extension("cogs.event_signups")
 
+        print("Loaded command tree:")
+        for command in self.tree.get_commands():
+            print(f"- /{command.name}")
+
         if GUILD_ID:
             guild = discord.Object(id=GUILD_ID)
+
+            self.tree.clear_commands(guild=guild)
             self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
-            print(f"Synced commands to guild {GUILD_ID}")
+
+            synced_commands = await self.tree.sync(guild=guild)
+
+            print(f"Synced {len(synced_commands)} commands to guild {GUILD_ID}:")
+            for command in synced_commands:
+                print(f"- /{command.name}")
         else:
-            await self.tree.sync()
-            print("Synced commands globally")
+            synced_commands = await self.tree.sync()
+
+            print(f"Synced {len(synced_commands)} commands globally:")
+            for command in synced_commands:
+                print(f"- /{command.name}")
 
     async def on_ready(self):
         print(f"Logged in as {self.user} ({self.user.id})")
-        print("Connected guilds:")
-        for guild in self.guilds:
-            print(f"- {guild.name}: {guild.id}")
 
 
 bot = NightLegionBot()

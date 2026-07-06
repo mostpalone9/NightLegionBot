@@ -1349,6 +1349,98 @@ class Botw(commands.Cog):
         )
 
     @app_commands.command(
+        name="botw_add_player",
+        description="Mod tool: add another member to the active BOTW event.",
+    )
+    @app_commands.describe(
+        member="The Discord member to add to BOTW.",
+        rsn="Optional. Leave blank to use their saved RSN.",
+        is_test="True = test BOTW. False = live BOTW. Defaults to True.",
+    )
+    @is_botw_admin()
+    async def botw_add_player(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        rsn: str = "",
+        is_test: bool = True,
+    ):
+        scope = event_scope_from_is_test(is_test)
+
+        if not await self.enforce_scope_channel_rules(interaction, scope):
+            return
+
+        event = self.get_active_event(scope)
+        if event is None:
+            await interaction.response.send_message(f"There is no active {scope} BOTW event.", ephemeral=True)
+            return
+
+        final_rsn = rsn.strip() if rsn.strip() else get_saved_rsn(member.id)
+
+        if not final_rsn:
+            await interaction.response.send_message(
+                (
+                    f"**{member.display_name}** does not have a saved BOTW RSN yet. "
+                    f"Use `/botw_set_player_rsn member:{member.display_name} rsn:TheirRSN` first, "
+                    "or pass `rsn:` directly into this command."
+                ),
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        if rsn.strip():
+            save_rsn(member.id, member.display_name, final_rsn)
+
+        try:
+            starting_kc, current_kc, gained_kc = await self.sync_participant(event, final_rsn)
+        except WiseOldManRateLimitError:
+            participants = event.setdefault("participants", {})
+            participant = participants.setdefault(final_rsn, {})
+            participant["discord_user_id"] = member.id
+            participant["discord_display_name"] = member.display_name
+            participant["registered_at"] = participant.get("registered_at", int(time.time()))
+            participant["sync_pending"] = True
+            event.setdefault("leaderboard", {}).setdefault(final_rsn, 0)
+            self.save_event(event)
+            await self.update_public_botw_message(event)
+
+            await interaction.followup.send(
+                (
+                    f"Added **{final_rsn}** for **{member.display_name}** to the active {scope} BOTW.\n\n"
+                    "Wise Old Man updated this account recently, so I could not refresh KC right now. "
+                    "Their KC will update automatically on the next scheduled refresh."
+                ),
+                ephemeral=True,
+            )
+            return
+        except Exception as error:
+            await interaction.followup.send(
+                f"I could not sync **{final_rsn}** with Wise Old Man.\n\nError: `{error}`",
+                ephemeral=True,
+            )
+            return
+
+        participant = event.setdefault("participants", {}).setdefault(final_rsn, {})
+        participant["discord_user_id"] = member.id
+        participant["discord_display_name"] = member.display_name
+        participant["registered_at"] = participant.get("registered_at", int(time.time()))
+
+        self.save_event(event)
+        await self.update_public_botw_message(event)
+
+        await interaction.followup.send(
+            (
+                f"Added **{final_rsn}** for **{member.display_name}** to the active {scope} BOTW.\n"
+                f"Starting KC: **{starting_kc}**\n"
+                f"Current KC: **{current_kc}**\n"
+                f"Current gained KC: **+{gained_kc}**"
+            ),
+            ephemeral=True,
+        )
+
+    @app_commands.command(
         name="botw_remove_player",
         description="Mod tool: remove a player from the active BOTW event without deleting their saved RSN.",
     )

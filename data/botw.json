@@ -72,19 +72,6 @@
       "last_updated": null
     },
     {
-      "id": "1781292896",
-      "boss": "Brutus",
-      "boss_metric": "brutus",
-      "reward": "Bragging rights",
-      "start_time": 1781292896,
-      "end_time": 1781897696,
-      "active": false,
-      "leaderboard": {},
-      "participants": {},
-      "created_by": 857121029024514048,
-      "last_updated": null
-    },
-    {
       "id": "1781293624",
       "boss": "The Corrupted Gauntlet",
       "boss_metric": "the_corrupted_gauntlet",
@@ -116,7 +103,7 @@
       "reward": "Toxic Blowpipe",
       "start_time": 1781297137,
       "end_time": 1781901937,
-      "active": true,
+      "active": false,
       "leaderboard": {
         "ShesXPWaste": 0,
         "Dom expert": 0,
@@ -163,6 +150,82 @@
       },
       "created_by": 857121029024514048,
       "last_updated": 1781297152
+    },
+    {
+      "id": "live-1783366486",
+      "scope": "live",
+      "is_test": false,
+      "boss": "Phantom Muspah",
+      "boss_metric": "phantom_muspah",
+      "boss_image_url": "https://oldschool.runescape.wiki/images/thumb/Phantom_Muspah_%28ranged%29.png/300px-Phantom_Muspah_%28ranged%29.png?9cf6a",
+      "reward": "Venator bow",
+      "prizes": [
+        {
+          "place": "1st",
+          "name": "Venator bow (uncharged)",
+          "item_id": 27612,
+          "price": 61812974,
+          "price_text": "61.8m",
+          "image_url": "https://oldschool.runescape.wiki/images/thumb/Venator_bow_%28uncharged%29_detail.png/96px-Venator_bow_%28uncharged%29_detail.png?6167b"
+        },
+        {
+          "place": "2nd",
+          "name": "Pegasian boots",
+          "item_id": 13237,
+          "price": 31630728,
+          "price_text": "31.6m",
+          "image_url": "https://oldschool.runescape.wiki/images/thumb/Pegasian_boots_detail.png/96px-Pegasian_boots_detail.png?9c62f"
+        },
+        {
+          "place": "3rd",
+          "name": "Webweaver bow (u)",
+          "item_id": 27652,
+          "price": 18356186,
+          "price_text": "18.4m",
+          "image_url": "https://oldschool.runescape.wiki/images/thumb/Webweaver_bow_%28u%29_detail.png/96px-Webweaver_bow_%28u%29_detail.png?d94c1"
+        }
+      ],
+      "start_time": 1783366486,
+      "end_time": 1783971286,
+      "active": true,
+      "leaderboard": {
+        "ShesXPWaste": 0,
+        "Iiiiiitom": 0,
+        "shiny pert": 0
+      },
+      "participants": {
+        "ShesXPWaste": {
+          "starting_kc": 0,
+          "current_kc": 0,
+          "last_synced": 1783369094,
+          "sync_pending": false,
+          "discord_user_id": 857121029024514048,
+          "discord_display_name": "ShesXPWaste",
+          "registered_at": 1783368446
+        },
+        "Iiiiiitom": {
+          "starting_kc": 102,
+          "current_kc": 102,
+          "last_synced": 1783369097,
+          "sync_pending": false,
+          "discord_user_id": 1098766736154693713,
+          "discord_display_name": "iiitom",
+          "registered_at": 1783368634
+        },
+        "shiny pert": {
+          "starting_kc": 0,
+          "current_kc": 0,
+          "last_synced": 1783369101,
+          "sync_pending": false,
+          "discord_user_id": 402167633920917505,
+          "discord_display_name": "shiny pert",
+          "registered_at": 1783368656
+        }
+      },
+      "created_by": 118729899761467392,
+      "last_updated": 1783369103,
+      "channel_id": null,
+      "message_id": null
     }
   ]
 }

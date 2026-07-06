@@ -1205,6 +1205,153 @@ class Botw(commands.Cog):
         await interaction.response.send_message(f"Your saved BOTW RSN is **{saved_rsn}**.", ephemeral=True)
 
     @app_commands.command(
+        name="botw_set_player_rsn",
+        description="Mod tool: save or update another member's BOTW RSN.",
+    )
+    @app_commands.describe(
+        member="The Discord member whose RSN should be saved.",
+        rsn="That member's OSRS username.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_set_player_rsn(self, interaction: discord.Interaction, member: discord.Member, rsn: str):
+        cleaned_rsn = rsn.strip()
+
+        if not cleaned_rsn:
+            await interaction.response.send_message("Please enter a valid RSN.", ephemeral=True)
+            return
+
+        save_rsn(member.id, member.display_name, cleaned_rsn)
+        await interaction.response.send_message(
+            f"Saved **{member.display_name}**'s BOTW RSN as **{cleaned_rsn}**.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(
+        name="botw_lookup_player",
+        description="Mod tool: look up a member's saved BOTW RSN.",
+    )
+    @app_commands.describe(member="The Discord member to look up.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_lookup_player(self, interaction: discord.Interaction, member: discord.Member):
+        saved_rsn = get_saved_rsn(member.id)
+
+        if not saved_rsn:
+            await interaction.response.send_message(
+                f"**{member.display_name}** does not have a saved BOTW RSN yet.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            f"**{member.display_name}**'s saved BOTW RSN is **{saved_rsn}**.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(
+        name="botw_remove_player",
+        description="Mod tool: remove a player from the active BOTW event without deleting their saved RSN.",
+    )
+    @app_commands.describe(
+        player_name="The player's OSRS username as shown on the BOTW leaderboard.",
+        is_test="True = test BOTW. False = live BOTW. Defaults to True.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_remove_player(self, interaction: discord.Interaction, player_name: str, is_test: bool = True):
+        scope = event_scope_from_is_test(is_test)
+
+        if not await self.enforce_scope_channel_rules(interaction, scope):
+            return
+
+        event = self.get_active_event(scope)
+        if event is None:
+            await interaction.response.send_message(f"There is no active {scope} BOTW event.", ephemeral=True)
+            return
+
+        participants = event.setdefault("participants", {})
+        leaderboard = event.setdefault("leaderboard", {})
+
+        matched_rsn = None
+        for rsn in list(set(participants.keys()) | set(leaderboard.keys())):
+            if rsn.lower() == player_name.strip().lower():
+                matched_rsn = rsn
+                break
+
+        if matched_rsn is None:
+            await interaction.response.send_message(
+                f"I could not find **{player_name}** in the active {scope} BOTW event.",
+                ephemeral=True,
+            )
+            return
+
+        participants.pop(matched_rsn, None)
+        leaderboard.pop(matched_rsn, None)
+        self.save_event(event)
+        await self.update_public_botw_message(event)
+
+        await interaction.response.send_message(
+            f"Removed **{matched_rsn}** from the active {scope} BOTW event. Their saved RSN was not deleted.",
+            ephemeral=True,
+        )
+
+    @app_commands.command(
+        name="botw_force_sync",
+        description="Mod tool: force-sync one player in the active BOTW event from Wise Old Man.",
+    )
+    @app_commands.describe(
+        player_name="The player's OSRS username as shown on the BOTW leaderboard.",
+        is_test="True = test BOTW. False = live BOTW. Defaults to True.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_force_sync(self, interaction: discord.Interaction, player_name: str, is_test: bool = True):
+        scope = event_scope_from_is_test(is_test)
+
+        if not await self.enforce_scope_channel_rules(interaction, scope):
+            return
+
+        event = self.get_active_event(scope)
+        if event is None:
+            await interaction.response.send_message(f"There is no active {scope} BOTW event.", ephemeral=True)
+            return
+
+        matched_rsn = None
+        for rsn in event.get("participants", {}).keys():
+            if rsn.lower() == player_name.strip().lower():
+                matched_rsn = rsn
+                break
+
+        if matched_rsn is None:
+            await interaction.response.send_message(
+                f"I could not find **{player_name}** in the active {scope} BOTW participant list.",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True)
+
+        try:
+            starting_kc, current_kc, gained_kc = await self.sync_participant(event, matched_rsn)
+        except WiseOldManRateLimitError as error:
+            await interaction.followup.send(f"Wise Old Man rate-limited **{matched_rsn}**: {error}", ephemeral=True)
+            return
+        except Exception as error:
+            await interaction.followup.send(f"Could not sync **{matched_rsn}**. Error: `{error}`", ephemeral=True)
+            return
+
+        event["last_updated"] = int(time.time())
+        self.save_event(event)
+        await self.update_public_botw_message(event)
+
+        await interaction.followup.send(
+            (
+                f"Synced **{matched_rsn}**.\n"
+                f"Starting KC: **{starting_kc}**\n"
+                f"Current KC: **{current_kc}**\n"
+                f"Gained KC: **+{gained_kc}**"
+            ),
+            ephemeral=True,
+        )
+
+    @app_commands.command(
         name="botw_join",
         description="Join the active BOTW with your saved or provided OSRS username.",
     )

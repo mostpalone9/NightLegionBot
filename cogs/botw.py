@@ -137,6 +137,86 @@ def event_is_scope(event: dict, scope: str) -> bool:
     return event_scope_from_is_test(bool(event.get("is_test", False))) == scope
 
 
+def event_scope(event: dict) -> str:
+    if event.get("scope") in (EVENT_SCOPE_LIVE, EVENT_SCOPE_TEST):
+        return event["scope"]
+    return event_scope_from_is_test(bool(event.get("is_test", False)))
+
+
+def normalize_botw_events_data(data: dict, remove_inactive_tests: bool = False) -> tuple[dict, dict]:
+    """Repair BOTW data so only one live and one test event can be active.
+
+    This prevents stale or duplicate events from confusing join/leaderboard commands.
+    It is deliberately conservative: live event history is kept, exact duplicate IDs are removed,
+    and inactive test spam can optionally be deleted.
+    """
+    events = data.get("events", [])
+    if not isinstance(events, list):
+        events = []
+
+    stats = {
+        "removed_duplicate_ids": 0,
+        "removed_inactive_tests": 0,
+        "deactivated_live": 0,
+        "deactivated_test": 0,
+        "normalized_scope": 0,
+    }
+
+    deduped_reversed = []
+    seen_ids = set()
+    for event in reversed(events):
+        event_id = event.get("id")
+        if event_id and event_id in seen_ids:
+            stats["removed_duplicate_ids"] += 1
+            continue
+        if event_id:
+            seen_ids.add(event_id)
+        deduped_reversed.append(event)
+
+    deduped = list(reversed(deduped_reversed))
+    kept_events = []
+    for event in deduped:
+        scope = event_scope(event)
+        if event.get("scope") != scope:
+            event["scope"] = scope
+            stats["normalized_scope"] += 1
+        event["is_test"] = scope == EVENT_SCOPE_TEST
+
+        if remove_inactive_tests and scope == EVENT_SCOPE_TEST and not event.get("active"):
+            stats["removed_inactive_tests"] += 1
+            continue
+
+        kept_events.append(event)
+
+    for scope in (EVENT_SCOPE_LIVE, EVENT_SCOPE_TEST):
+        active_events = [event for event in kept_events if event.get("active") and event_scope(event) == scope]
+        if len(active_events) <= 1:
+            continue
+
+        keeper = max(active_events, key=lambda event: int(event.get("start_time") or 0))
+        for event in active_events:
+            if event is keeper:
+                continue
+            event["active"] = False
+            if scope == EVENT_SCOPE_LIVE:
+                stats["deactivated_live"] += 1
+            else:
+                stats["deactivated_test"] += 1
+
+    data["events"] = kept_events
+    return data, stats
+
+
+def load_repaired_botw_data(remove_inactive_tests: bool = False) -> tuple[dict, dict]:
+    data = load_json(BOTW_FILE, {"events": []})
+    repaired_data, stats = normalize_botw_events_data(data, remove_inactive_tests=remove_inactive_tests)
+
+    if any(stats.values()):
+        save_json(BOTW_FILE, repaired_data)
+
+    return repaired_data, stats
+
+
 def boss_name_to_metric(boss_name: str) -> str:
     normalized = boss_name.lower().strip().replace("’", "'")
     if normalized in BOSS_METRIC_ALIASES:
@@ -829,7 +909,7 @@ class Botw(commands.Cog):
         return True
 
     def get_active_event(self, scope: str = EVENT_SCOPE_LIVE) -> dict | None:
-        data = load_json(BOTW_FILE, {"events": []})
+        data, _stats = load_repaired_botw_data()
 
         for event in data["events"]:
             if event.get("active") and event_is_scope(event, scope):
@@ -856,7 +936,9 @@ class Botw(commands.Cog):
         return self.get_active_event(EVENT_SCOPE_LIVE)
 
     def save_event(self, updated_event: dict) -> None:
-        data = load_json(BOTW_FILE, {"events": []})
+        data, _stats = load_repaired_botw_data()
+        updated_event["scope"] = event_scope(updated_event)
+        updated_event["is_test"] = updated_event["scope"] == EVENT_SCOPE_TEST
 
         for index, event in enumerate(data["events"]):
             if event.get("id") == updated_event.get("id"):
@@ -1106,7 +1188,7 @@ class Botw(commands.Cog):
             await interaction.followup.send("Duration must be at least 1 day.", ephemeral=True)
             return
 
-        data = load_json(BOTW_FILE, {"events": []})
+        data, _stats = load_repaired_botw_data()
 
         for event in data["events"]:
             if event.get("active") and event_is_scope(event, scope):
@@ -1642,6 +1724,67 @@ class Botw(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=not public)
 
     @app_commands.command(
+        name="botw_repair_events",
+        description="Mod tool: repair BOTW event data and deactivate duplicate active events.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_repair_events(self, interaction: discord.Interaction):
+        data, stats = load_repaired_botw_data()
+
+        active_lines = []
+        for event in data.get("events", []):
+            if event.get("active"):
+                scope = event_scope(event)
+                active_lines.append(
+                    f"**{scope}**: {event.get('boss', 'Unknown boss')} `id={event.get('id')}`"
+                )
+
+        if not active_lines:
+            active_text = "No active BOTW events found."
+        else:
+            active_text = "\n".join(active_lines)
+
+        summary = (
+            "BOTW data repaired.\n\n"
+            f"Duplicate IDs removed: **{stats['removed_duplicate_ids']}**\n"
+            f"Old active live events deactivated: **{stats['deactivated_live']}**\n"
+            f"Old active test events deactivated: **{stats['deactivated_test']}**\n"
+            f"Scopes normalized: **{stats['normalized_scope']}**\n\n"
+            f"Active events now:\n{active_text}"
+        )
+        await interaction.response.send_message(summary, ephemeral=True)
+
+    @app_commands.command(
+        name="botw_cleanup_tests",
+        description="Mod tool: delete inactive test BOTW events and repair duplicate active events.",
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def botw_cleanup_tests(self, interaction: discord.Interaction):
+        data, stats = load_repaired_botw_data(remove_inactive_tests=True)
+
+        active_tests = [
+            event for event in data.get("events", [])
+            if event.get("active") and event_scope(event) == EVENT_SCOPE_TEST
+        ]
+        active_live = [
+            event for event in data.get("events", [])
+            if event.get("active") and event_scope(event) == EVENT_SCOPE_LIVE
+        ]
+
+        await interaction.response.send_message(
+            (
+                "Inactive test BOTW events cleaned up.\n\n"
+                f"Inactive tests deleted: **{stats['removed_inactive_tests']}**\n"
+                f"Duplicate IDs removed: **{stats['removed_duplicate_ids']}**\n"
+                f"Old active live events deactivated: **{stats['deactivated_live']}**\n"
+                f"Old active test events deactivated: **{stats['deactivated_test']}**\n\n"
+                f"Active live events: **{len(active_live)}**\n"
+                f"Active test events: **{len(active_tests)}**"
+            ),
+            ephemeral=True,
+        )
+
+    @app_commands.command(
         name="botw_end",
         description="End the active BOTW event.",
     )
@@ -1653,7 +1796,7 @@ class Botw(commands.Cog):
         if not await self.enforce_scope_channel_rules(interaction, scope):
             return
 
-        data = load_json(BOTW_FILE, {"events": []})
+        data, _stats = load_repaired_botw_data()
         active_event = None
 
         for event in data["events"]:

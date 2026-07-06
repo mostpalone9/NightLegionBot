@@ -31,6 +31,25 @@ EVENT_SCOPE_LIVE = "live"
 EVENT_SCOPE_TEST = "test"
 
 
+BOTW_ADMIN_ROLE_IDS = {
+    1404493965344116766,  # Discord Developer
+    1404494010583879720,  # Staff
+    1404494015747063928,  # Admins
+    1404494051998171198,  # Mods
+}
+
+def is_botw_admin():
+    async def predicate(interaction: discord.Interaction):
+        if interaction.guild and interaction.user.id == interaction.guild.owner_id:
+            return True
+        member = interaction.user
+        if getattr(member, "guild_permissions", None) and member.guild_permissions.administrator:
+            return True
+        return any(role.id in BOTW_ADMIN_ROLE_IDS for role in getattr(member,"roles",[]))
+    return app_commands.check(predicate)
+
+
+
 class WiseOldManRateLimitError(Exception):
     pass
 
@@ -1144,7 +1163,7 @@ class Botw(commands.Cog):
         name="botw_notify_panel",
         description="Post the BOTW notification role button.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_notify_panel(self, interaction: discord.Interaction):
         embed = discord.Embed(
             title="🔔 BOTW Notifications",
@@ -1166,7 +1185,7 @@ class Botw(commands.Cog):
         third_prize="3rd place prize, example: Webweaver bow.",
         is_test="True = test event in bot testing channel. False = real live event. Defaults to True.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_start(
         self,
         interaction: discord.Interaction,
@@ -1294,7 +1313,7 @@ class Botw(commands.Cog):
         member="The Discord member whose RSN should be saved.",
         rsn="That member's OSRS username.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_set_player_rsn(self, interaction: discord.Interaction, member: discord.Member, rsn: str):
         cleaned_rsn = rsn.strip()
 
@@ -1313,7 +1332,7 @@ class Botw(commands.Cog):
         description="Mod tool: look up a member's saved BOTW RSN.",
     )
     @app_commands.describe(member="The Discord member to look up.")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_lookup_player(self, interaction: discord.Interaction, member: discord.Member):
         saved_rsn = get_saved_rsn(member.id)
 
@@ -1337,7 +1356,7 @@ class Botw(commands.Cog):
         player_name="The player's OSRS username as shown on the BOTW leaderboard.",
         is_test="True = test BOTW. False = live BOTW. Defaults to True.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_remove_player(self, interaction: discord.Interaction, player_name: str, is_test: bool = True):
         scope = event_scope_from_is_test(is_test)
 
@@ -1383,7 +1402,7 @@ class Botw(commands.Cog):
         player_name="The player's OSRS username as shown on the BOTW leaderboard.",
         is_test="True = test BOTW. False = live BOTW. Defaults to True.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_force_sync(self, interaction: discord.Interaction, player_name: str, is_test: bool = True):
         scope = event_scope_from_is_test(is_test)
 
@@ -1509,7 +1528,7 @@ class Botw(commands.Cog):
         message_id="The message ID of the BOTW post to auto-update.",
         is_test="True = bind test BOTW. False = bind live BOTW. Defaults to True.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_bind_message(self, interaction: discord.Interaction, message_id: str, is_test: bool = True):
         scope = event_scope_from_is_test(is_test)
 
@@ -1549,7 +1568,7 @@ class Botw(commands.Cog):
         description="Refresh the boss/prize images for the active BOTW from the OSRS Wiki.",
     )
     @app_commands.describe(is_test="True = refresh test BOTW. False = refresh live BOTW. Defaults to True.")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_refresh_image(self, interaction: discord.Interaction, is_test: bool = True):
         scope = event_scope_from_is_test(is_test)
 
@@ -1668,7 +1687,7 @@ class Botw(commands.Cog):
         gained_kc="KC gained during the event.",
         is_test="True = test BOTW. False = live BOTW. Defaults to True.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_add_kc(
         self,
         interaction: discord.Interaction,
@@ -1727,7 +1746,7 @@ class Botw(commands.Cog):
         name="botw_repair_events",
         description="Mod tool: repair BOTW event data and deactivate duplicate active events.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_repair_events(self, interaction: discord.Interaction):
         data, stats = load_repaired_botw_data()
 
@@ -1758,7 +1777,7 @@ class Botw(commands.Cog):
         name="botw_cleanup_tests",
         description="Mod tool: delete inactive test BOTW events and repair duplicate active events.",
     )
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_cleanup_tests(self, interaction: discord.Interaction):
         data, stats = load_repaired_botw_data(remove_inactive_tests=True)
 
@@ -1789,7 +1808,7 @@ class Botw(commands.Cog):
         description="End the active BOTW event.",
     )
     @app_commands.describe(is_test="True = end test BOTW. False = end live BOTW. Defaults to True.")
-    @app_commands.checks.has_permissions(manage_guild=True)
+    @is_botw_admin()
     async def botw_end(self, interaction: discord.Interaction, is_test: bool = True):
         scope = event_scope_from_is_test(is_test)
 
